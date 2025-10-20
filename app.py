@@ -1,7 +1,5 @@
 import os
-import gunicorn
 import sqlite3
-import configparser
 import re
 from flask import Flask, request, g, redirect, url_for, render_template, send_file, flash
 from io import BytesIO
@@ -9,9 +7,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.units import cm
-from reportlab.lib import colors
-from werkzeug.utils import secure_filename
-from reportlab.lib import colors
 from werkzeug.utils import secure_filename
 import datetime
 
@@ -21,7 +16,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # --- FLASK APP ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'metti-qui-una-chiave-segreta'
+# ASSICURATI DI CAMBIARE QUESTA CHIAVE SEGRETA IN PRODUZIONE!
+app.config['SECRET_KEY'] = 'la-tua-chiave-segreta-unica' 
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'img')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -29,6 +25,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 DATABASE = os.path.join(BASE_DIR, 'static', 'clienti.db')
 
 def get_db():
+    """Stabilisce la connessione al database per la request corrente."""
     if 'db' not in g:
         g.db = sqlite3.connect(DATABASE)
         g.db.row_factory = sqlite3.Row
@@ -36,11 +33,13 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
+    """Chiude la connessione al database alla fine del contesto applicativo."""
     db = g.pop('db', None)
     if db is not None:
         db.close()
 
 def init_db():
+    """Inizializza la tabella clienti nel database."""
     db = get_db()
     db.execute('''
         CREATE TABLE IF NOT EXISTS clienti (
@@ -71,37 +70,54 @@ def init_db():
     ''')
     db.commit()
 
-# --- FILE SVG ---
+# --- UTILITY E VALIDAZIONE ---
 ALLOWED_EXTENSIONS = {'svg'}
 def allowed_file(filename):
+    """Controlla se l'estensione del file è ammessa (solo SVG)."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_valid_phone(value):
+    """Valida il formato del numero di telefono (accetta vuoto)."""
+    return value == '' or (value.isdigit() and len(value) <= 10)
+    
+def is_valid_email(value):
+    """Valida il formato dell'email (accetta vuoto)."""
+    return value == '' or re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", value)
+
+def is_valid_name(value, max_length=15):
+    """Valida il formato del nome/cognome (accetta vuoto, max 15 caratteri, solo alfabetici)."""
+    return value == '' or (value.isalpha() and len(value) <= max_length)
+    
+def is_valid_number_in_range(value, min_val, max_val):
+    """Valida se il valore è un numero intero compreso nel range specificato."""
+    try:
+        num = int(value)
+        return min_val <= num <= max_val
+    except ValueError:
+        return False
+    
 def validate_client_data(data):
     """Esegue tutte le validazioni dei campi cliente e immobile."""
     
     # --- VALIDAZIONI CLIENTE (OBBLIGATORIE) ---
-    
-    if not is_valid_name(data['nome_cliente']):
+    if not is_valid_name(data.get('nome')):
         return "Il nome cliente deve contenere solo lettere ed essere lungo massimo 15 caratteri."
-    if not is_valid_name(data['cognome_cliente']):
+    if not is_valid_name(data.get('cognome')):
         return "Il cognome cliente deve contenere solo lettere ed essere lungo massimo 15 caratteri."
-    if not is_valid_phone(data['telefono_cliente']):
+    if not is_valid_phone(data.get('telefono')):
         return "Telefono cliente non valido: solo numeri, massimo 10 cifre."
- 
-
+    
     # --- VALIDAZIONI BENEFICIARIO (OPZIONALI SE VUOTI) ---
-    # Nota: usiamo "data['campo'] and not is_valid..." per accettare la stringa vuota ''
     if data['nome_beneficiario'] and not is_valid_name(data['nome_beneficiario']):
-         return "Il nome beneficiario non è valido (solo lettere, max 15, o vuoto)."
+          return "Il nome beneficiario non è valido (solo lettere, max 15, o vuoto)."
     if data['cognome_beneficiario'] and not is_valid_name(data['cognome_beneficiario']):
-         return "Il cognome beneficiario non è valido (solo lettere, max 15, o vuoto)."
+          return "Il cognome beneficiario non è valido (solo lettere, max 15, o vuoto)."
     if data['telefono_beneficiario'] and not is_valid_phone(data['telefono_beneficiario']):
-         return "Telefono beneficiario non valido (solo numeri, max 10 cifre, o vuoto)."
+          return "Telefono beneficiario non valido (solo numeri, max 10 cifre, o vuoto)."
     if not is_valid_email(data['email_beneficiario']):
-         return "Email beneficiario non valida!"
+          return "Email beneficiario non valida!"
     if data['sesso_beneficiario'] not in ('M', 'F', ''): 
-         return "Sesso beneficiario non valido. Deve essere M, F o vuoto."
-    # Aggiungi qui eventuali controlli sul formato data_nascita_beneficiario se necessario.
+          return "Sesso beneficiario non valido. Deve essere M, F o vuoto."
 
     # --- VALIDAZIONI IMMOBILE (OBBLIGATORIE) ---
     if not is_valid_number_in_range(data['metri_quadri'], 20, 400):
@@ -111,45 +127,21 @@ def validate_client_data(data):
     if len(data['richiesta_specifica']) > 300:
         return "La richiesta specifica può contenere al massimo 300 caratteri."
 
-    # Se tutte le validazioni passano, ritorna None (nessun errore)
     return None
 
-# --- VALIDAZIONI CAMPI (CORRETTE PER GESTIRE IL CAMPO VUOTO '') ---
-
-def is_valid_phone(value):
-    # Accetta stringa vuota ('') O la verifica che sia numerica e max 10 cifre
-    return value == '' or (value.isdigit() and len(value) <= 10)
-def is_valid_email(value):
-    # Accetta stringa vuota ('') O la verifica con regex
-    return value == '' or re.match(r"[^@]+@[^@]+\.[^@]+", value)
-def is_valid_name(value, max_length=15):
-    # Accetta stringa vuota ('') O la verifica che sia alfabetica e max 15 caratteri
-    return value == '' or (value.isalpha() and len(value) <= max_length)
-def is_valid_number_in_range(value, min_val, max_val):
-    try:
-        num = int(value)
-        return min_val <= num <= max_val
-    except ValueError:
-        return False
-    
-
-# COMPLEANNO CLIENTI 
 def giorni_al_compleanno(data_nascita_str):
+    """Calcola i giorni mancanti al compleanno."""
     if not data_nascita_str:
-        return None # Nessuna data, nessun calcolo
+        return None 
         
     try:
-        # Assumiamo che il formato sia 'YYYY-MM-DD' o compatibile con input type="date"
         data_nascita = datetime.datetime.strptime(data_nascita_str, '%Y-%m-%d')
     except ValueError:
-        return None # Formato data non valido
+        return None 
         
     oggi = datetime.date.today()
-    
-    # 1. Calcola il compleanno di quest'anno
     compleanno_questanno = datetime.date(oggi.year, data_nascita.month, data_nascita.day)
     
-    # 2. Se il compleanno è già passato, considera quello del prossimo anno
     if compleanno_questanno < oggi:
         compleanno_prossimoanno = datetime.date(oggi.year + 1, data_nascita.month, data_nascita.day)
         differenza = compleanno_prossimoanno - oggi
@@ -158,42 +150,57 @@ def giorni_al_compleanno(data_nascita_str):
         
     return differenza.days
 
-# --- ROUTES ---
+# --- ROTTE ---
+
 @app.route('/')
 def home():
-    return render_template('/index.html')
+    """Mostra la pagina iniziale (home)."""
+    return render_template('index.html') 
 
+@app.route('/privacy')
+def privacy_policy():
+    """Mostra la pagina con l'Informativa sulla Privacy."""
+    return render_template('privacy.html')
+
+# ENDPOINT GET PER IL FORM DI ISCRIZIONE (ISCRIZIONE DAL SITO PUBBLICO)
+@app.route('/iscrizione_cliente')
+def iscrizione_cliente():
+    """Mostra la pagina con il form per iscrivere un nuovo cliente."""
+    return render_template('iscrizione_cliente.html') 
 
 @app.route('/iscrivi', methods=['POST'])
 def iscrivi_nuovo_cliente():
-    # 1. RACCOLTA DATI (Assicurati che tutte le chiavi siano corrette)
-    data = {key: request.form.get(key, '') for key in [
-        'nome_cliente','cognome_cliente','sesso_cliente','data_nascita','telefono_cliente','email_cliente',
-        'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
-        'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato','piano','metri_quadri',
-        'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica',
-        'privacy_accepted' # Aggiungi la privacy
-    ]}
+    """Elabora l'iscrizione di un nuovo cliente dal form pubblico (POST)."""
+    
+    # 1. RACCOLTA DATI (I nomi delle chiavi devono corrispondere alle colonne DB)
+    campi_db = ['nome','cognome','sesso','data_nascita','telefono','email', 
+                'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
+                'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato','piano','metri_quadri',
+                'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica']
+    
+    data = {key: request.form.get(key, '') for key in campi_db}
+    data['privacy_accepted'] = request.form.get('privacy_accepted')
 
-    # 2. VALIDAZIONE (Riutilizza la funzione che hai)
+    # 2. VALIDAZIONE e CONTROLLO PRIVACY
     error_message = validate_client_data(data)
     
-    # 3. CONTROLLO PRIVACY
     if not data.get('privacy_accepted'):
-        error_message = "Devi accettare l'Informativa sulla Privacy per procedere."
+        if not error_message:
+            error_message = "Devi accettare l'Informativa sulla Privacy per procedere."
+        else:
+             error_message += " E Devi accettare l'Informativa sulla Privacy per procedere."
+
 
     if error_message:
         flash(f"❌ Errore di compilazione: {error_message}")
-        # MODIFICA: In caso di errore, torna alla pagina del form
+        # REINDIRIZZAMENTO CORRETTO: usa l'endpoint 'iscrizione_cliente'
         return redirect(url_for('iscrizione_cliente')) 
 
-    # 4. INSERIMENTO NEL DATABASE (con verifica)
+    # 3. INSERIMENTO NEL DATABASE
     try:
         db = get_db()
-        # Nota: Devi assicurarti che la colonna 'privacy_accepted' esista nel tuo DB
-        # Se non esiste, rimuovila da 'data' e dalla lista delle colonne qui sotto
         
-        # Rimuoviamo il campo privacy per l'inserimento nel DB se non ne hai la colonna
+        # Rimuoviamo il campo privacy prima dell'inserimento
         data.pop('privacy_accepted') 
         
         colonne = list(data.keys())
@@ -213,93 +220,41 @@ def iscrivi_nuovo_cliente():
     except Exception as e:
         flash(f"❌ Errore imprevisto durante l'iscrizione: {e}", 'error')
 
-    # 5. REINDIRIZZAMENTO FINALE
-    # MODIFICA: In caso di successo o fallimento DB, reindirizza sempre alla pagina del form
     return redirect(url_for('iscrizione_cliente'))
 
 
-
-@app.route('/clienti', methods=['GET', 'POST'])
-def lista_clienti():
-    db = get_db()
-    
-    # Se devi gestire il filtro 'ristrutturato' (come discusso in precedenza), aggiungi qui la logica POST/GET
-    # Per semplicità, qui carichiamo tutti i clienti:
-    query = 'SELECT * FROM clienti'
-    # Per semplicità, i filtri POST/GET andrebbero qui, ma ignoriamo il post per focalizzarci sui compleanni
-    clienti_raw = db.execute(query).fetchall() 
-
-    clienti_compleanni = []
-    compleanni_oggi = []
-    
-    # Elaborazione dei dati:
-    for cliente in clienti_raw:
-        cliente_dict = dict(cliente) # Converti la riga SQLite in un dizionario modificabile
-        
-        # CLIENTE PRINCIPALE
-        giorni_mancanti_cliente = giorni_al_compleanno(cliente_dict.get('data_nascita'))
-        cliente_dict['giorni_mancanti'] = giorni_mancanti_cliente
-        
-        # Controlla se il compleanno è oggi
-        if giorni_mancanti_cliente == 0:
-            cliente_dict['compleanno_oggi'] = True
-            compleanni_oggi.append(f"{cliente_dict['nome']} {cliente_dict['cognome']} (Cliente)")
-        else:
-            cliente_dict['compleanno_oggi'] = False
-
-        # BENEFICIARIO (Opzionale: puoi aggiungere la stessa logica se vuoi evidenziare anche i beneficiari)
-        giorni_mancanti_beneficiario = giorni_al_compleanno(cliente_dict.get('data_nascita_beneficiario'))
-        
-        if giorni_mancanti_beneficiario == 0:
-            compleanni_oggi.append(f"{cliente_dict['nome_beneficiario']} {cliente_dict['cognome_beneficiario']} (Beneficiario di {cliente_dict['nome']})")
-        
-        clienti_compleanni.append(cliente_dict)
-
-    num_compleanni = len(compleanni_oggi)
-    
-    return render_template('clienti.html', 
-                           clienti=clienti_compleanni, 
-                           compleanni_oggi=compleanni_oggi,
-                           num_compleanni=num_compleanni)
-
-
-# --- NUOVA ROTTA PER LA PRIVACY ---
-@app.route('/privacy')
-def privacy_policy():
-    """Mostra la pagina con l'Informativa sulla Privacy."""
-    # Dovrai creare il template HTML chiamato 'privacy.html'
-    return render_template('privacy.html')
-# --- FINE NUOVA ROTTA ---
+# ENDPOINT GET PER IL FORM DI AGGIUNTA MANUALE
+@app.route('/aggiungi_form')
+def aggiungi_form():
+    """Mostra la pagina con il form per aggiungere un nuovo cliente (gestionale)."""
+    return render_template('aggiungi_cliente.html') 
 
 
 @app.route('/aggiungi', methods=['POST'])
 def aggiungi_cliente():
-    # 1. RACCOLTA DATI
-    data = {key: request.form.get(key, '') for key in [
-        'nome_cliente','cognome_cliente','sesso_cliente','data_nascita','telefono_cliente','email_cliente',
-        'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
-        'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato','piano','metri_quadri',
-        'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica'
-    ]}
+    """Elabora l'aggiunta di un nuovo cliente dal form gestionale (POST)."""
+    
+    campi_db = ['nome','cognome','sesso','data_nascita','telefono','email', 
+                'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
+                'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato','piano','metri_quadri',
+                'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica']
 
-    # 2. VALIDAZIONE
+    data = {key: request.form.get(key, '') for key in campi_db}
+
     error_message = validate_client_data(data)
     
     if error_message:
         flash(f"❌ Errore di compilazione: {error_message}")
-        # MODIFICA 1: In caso di errore, reindirizza alla lista clienti
-        return redirect(url_for('lista_clienti')) 
+        return redirect(url_for('aggiungi_form'))
 
-    # 3. INSERIMENTO NEL DATABASE (con verifica)
     try:
         db = get_db()
-        cursor = db.execute('''
-            INSERT INTO clienti (
-                nome, cognome, sesso, data_nascita, telefono, email,
-                nome_beneficiario, cognome_beneficiario, sesso_beneficiario, data_nascita_beneficiario,
-                telefono_beneficiario, email_beneficiario, tipologia_immobile, ristrutturato, piano, metri_quadri,
-                classe_energetica, parcheggio, vicinanza_mare, tipo_proprieta, prezzo_ricercato, richiesta_specifica
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        colonne = list(data.keys())
+        placeholder = ', '.join(['?'] * len(colonne))
+
+        cursor = db.execute(f'''
+            INSERT INTO clienti ({', '.join(colonne)}) 
+            VALUES ({placeholder})
         ''', tuple(data.values()))
         
         db.commit()
@@ -315,30 +270,75 @@ def aggiungi_cliente():
     except Exception as e:
         flash(f"❌ Errore imprevisto durante l'aggiunta: {e}", 'error')
 
-    # 4. REINDIRIZZAMENTO FINALE
-    # MODIFICA 2: In caso di successo o fallimento DB, reindirizza sempre alla lista clienti
     return redirect(url_for('lista_clienti'))
+
+
+@app.route('/clienti', methods=['GET', 'POST'])
+def lista_clienti():
+    """Mostra la lista dei clienti ed evidenzia i compleanni."""
+    db = get_db()
+    query = 'SELECT * FROM clienti ORDER BY id DESC' # Ordina per ID decrescente per vedere gli ultimi
+    clienti_raw = db.execute(query).fetchall() 
+
+    clienti_compleanni = []
+    compleanni_oggi = []
+    
+    for cliente in clienti_raw:
+        cliente_dict = dict(cliente) 
+        
+        # Gestione compleanno Cliente
+        giorni_mancanti_cliente = giorni_al_compleanno(cliente_dict.get('data_nascita'))
+        cliente_dict['giorni_mancanti'] = giorni_mancanti_cliente
+        
+        if giorni_mancanti_cliente == 0:
+            cliente_dict['compleanno_oggi'] = True
+            compleanni_oggi.append(f"{cliente_dict['nome']} {cliente_dict['cognome']} (Cliente)")
+        else:
+            cliente_dict['compleanno_oggi'] = False
+
+        # Gestione compleanno Beneficiario
+        giorni_mancanti_beneficiario = giorni_al_compleanno(cliente_dict.get('data_nascita_beneficiario'))
+        
+        if giorni_mancanti_beneficiario == 0 and cliente_dict.get('nome_beneficiario'):
+            compleanni_oggi.append(f"{cliente_dict['nome_beneficiario']} {cliente_dict['cognome_beneficiario']} (Beneficiario di {cliente_dict['nome']})")
+        
+        clienti_compleanni.append(cliente_dict)
+
+    num_compleanni = len(compleanni_oggi)
+    
+    return render_template('clienti.html', 
+                            clienti=clienti_compleanni, 
+                            compleanni_oggi=compleanni_oggi,
+                            num_compleanni=num_compleanni)
+
 
 @app.route('/modifica/<int:id>', methods=['GET', 'POST'])
 def modifica_cliente(id):
+    """Gestisce la visualizzazione e la modifica di un cliente esistente."""
     db = get_db()
     cliente = db.execute('SELECT * FROM clienti WHERE id = ?', (id,)).fetchone()
     
-    if request.method == 'POST':
-        data = {key: request.form.get(key, '') for key in [
-            'nome_cliente','cognome_cliente','sesso_cliente','data_nascita','telefono_cliente','email_cliente',
-            'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
-            'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato', 'piano','metri_quadri',
-            'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica'
-        ]}
+    if not cliente:
+        flash("Cliente non trovato")
+        return redirect(url_for('lista_clienti'))
 
-        # CHIAMA LA FUNZIONE UNICA DI VALIDAZIONE
+    if request.method == 'POST':
+        campi_db = ['nome','cognome','sesso','data_nascita','telefono','email', 
+                    'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
+                    'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato', 'piano','metri_quadri',
+                    'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica']
+        
+        data = {key: request.form.get(key, '') for key in campi_db}
+
         error_message = validate_client_data(data)
 
         if error_message:
             flash(error_message)
-            # Reindirizza all'URL di modifica, mantenendo l'ID
             return redirect(url_for('modifica_cliente', id=id)) 
+
+        # Esegue l'UPDATE
+        valori = list(data.values())
+        valori.append(id) 
 
         db.execute('''
             UPDATE clienti SET
@@ -347,9 +347,9 @@ def modifica_cliente(id):
                 telefono_beneficiario=?, email_beneficiario=?, tipologia_immobile=?, ristrutturato=?, piano=?, metri_quadri=?,
                 classe_energetica=?, parcheggio=?, vicinanza_mare=?, tipo_proprieta=?, prezzo_ricercato=?, richiesta_specifica=?
             WHERE id=?
-        ''', tuple(data.values()) + (id,))
+        ''', tuple(valori))
         db.commit()
-        flash("Cliente modificato con successo!")
+        flash("✅ Cliente modificato con successo!")
         return redirect(url_for('lista_clienti'))
 
     return render_template('modifica_cliente.html', cliente=cliente)
@@ -357,17 +357,16 @@ def modifica_cliente(id):
 
 @app.route('/elimina/<int:id>', methods=['POST'])
 def elimina_cliente(id):
+    """Elimina un cliente dal database."""
     db = get_db()
     db.execute('DELETE FROM clienti WHERE id = ?', (id,))
     db.commit()
     flash("Cliente eliminato con successo!")
     return redirect(url_for('lista_clienti'))
 
-# --- ROUTES ---
-# ... (altre rotte)
-
 @app.route('/scheda/<int:id>')
 def scheda_cliente(id):
+    """Genera e scarica la scheda PDF del cliente."""
     db = get_db()
     cliente = db.execute('SELECT * FROM clienti WHERE id = ?', (id,)).fetchone()
     if not cliente:
@@ -378,7 +377,7 @@ def scheda_cliente(id):
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     story = []
 
-    # Immagine predefinita
+    # Se l'immagine predefinita esiste, la aggiunge
     img_path = os.path.join(app.static_folder, 'img', 'default.png')
     if os.path.exists(img_path):
         story.append(Image(img_path, width=6*cm, height=6*cm))
@@ -390,29 +389,40 @@ def scheda_cliente(id):
     story.append(Paragraph("<b>SCHEDA CLIENTE</b>", styles['Heading2']))
     story.append(Spacer(1, 0.5*cm))
 
-    for key in cliente.keys():
-        if key not in ['nome', 'cognome']:
-            story.append(Paragraph(f"<b>{key.replace('_',' ').capitalize()}:</b> {cliente[key]}", styles['Normal']))
+    etichette = {
+        'nome': 'Nome', 'cognome': 'Cognome', 'sesso': 'Sesso', 'data_nascita': 'Data di Nascita', 
+        'telefono': 'Telefono', 'email': 'Email', 
+        'nome_beneficiario': 'Nome Beneficiario', 'cognome_beneficiario': 'Cognome Beneficiario', 
+        'sesso_beneficiario': 'Sesso Beneficiario', 'data_nascita_beneficiario': 'Data Nascita Beneficiario',
+        'telefono_beneficiario': 'Telefono Beneficiario', 'email_beneficiario': 'Email Beneficiario',
+        'tipologia_immobile': 'Tipologia Immobile', 'ristrutturato': 'Ristrutturato', 'piano': 'Piano', 
+        'metri_quadri': 'Metri Quadri', 'classe_energetica': 'Classe Energetica', 
+        'parcheggio': 'Parcheggio', 'vicinanza_mare': 'Vicinanza Mare', 'tipo_proprieta': 'Tipo Proprietà', 
+        'prezzo_ricercato': 'Prezzo Ricercato', 'richiesta_specifica': 'Richiesta Specifica', 'id': 'ID'
+    }
+
+    # Aggiunge i dettagli del cliente al PDF
+    for key, value in cliente.items():
+        if key not in ['nome', 'cognome', 'id'] and value:
+            story.append(Paragraph(f"<b>{etichette.get(key, key.replace('_',' ').capitalize())}:</b> {value}", styles['Normal']))
             story.append(Spacer(1, 0.2*cm))
 
     doc.build(story)
     buffer.seek(0)
     
-    # --- MODIFICA CHIAVE QUI ---
-    # Costruiamo il nome file: "NOME_COGNOME_scheda.pdf"
-    # Sostituiamo spazi e rimuoviamo caratteri non validi per i file.
+    # Crea un nome file sicuro
     nome_completo = f"{cliente['nome']}_{cliente['cognome']}"
-    nome_file_sicuro = "".join(c for c in nome_completo if c.isalnum() or c in (' ', '_')).rstrip()
+    nome_file_sicuro = re.sub(r'[^\w\-]', '_', nome_completo).replace('__', '_')
     nome_file_finale = f"{nome_file_sicuro}_scheda.pdf"
-    # --- FINE MODIFICA CHIAVE ---
     
     return send_file(buffer, 
-                     as_attachment=True, 
-                     download_name=nome_file_finale,  # Utilizziamo il nuovo nome
-                     mimetype='application/pdf')
+                      as_attachment=True, 
+                      download_name=nome_file_finale,
+                      mimetype='application/pdf')
 
 @app.route('/upload', methods=['POST'])
 def upload_svg():
+    """Gestisce il caricamento di file SVG (es. loghi/immagini)."""
     file = request.files.get('file')
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -424,14 +434,11 @@ def upload_svg():
     return redirect(url_for('home'))
 
 # --- AVVIO ---
-# --- AVVIO ---
 if __name__ == "__main__":
-    # 1. INIZIALIZZAZIONE DEL DATABASE
-    # Creiamo un contesto applicativo e chiamiamo la funzione di inizializzazione
+    # Inizializzazione del database
     with app.app_context():
         init_db()
         print("✅ Database inizializzato (o già esistente) con la tabella 'clienti'.")
         
-    # Avvia il server Flask su tutte le interfacce
-    print("✅ Gestionale avviato su http://localhost:5000 (oppure http://<IP_locale>:5000)")
+    print("✅ Gestionale avviato su http://0.0.0.0:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
