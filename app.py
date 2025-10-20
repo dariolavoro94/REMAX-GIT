@@ -161,14 +161,63 @@ def giorni_al_compleanno(data_nascita_str):
 # --- ROUTES ---
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('/index.html')
 
 
-@app.route('/iscrizione', methods=['GET'])
-def iscrizione_cliente():
-    """Mostra il form semplificato di iscrizione per il cliente."""
-    # Questo template conterrà solo i campi rilevanti per l'auto-compilazione
-    return render_template('iscrizione.html') 
+@app.route('/iscrivi', methods=['POST'])
+def iscrivi_nuovo_cliente():
+    # 1. RACCOLTA DATI (Assicurati che tutte le chiavi siano corrette)
+    data = {key: request.form.get(key, '') for key in [
+        'nome_cliente','cognome_cliente','sesso_cliente','data_nascita','telefono_cliente','email_cliente',
+        'nome_beneficiario','cognome_beneficiario','sesso_beneficiario','data_nascita_beneficiario',
+        'telefono_beneficiario','email_beneficiario','tipologia_immobile', 'ristrutturato','piano','metri_quadri',
+        'classe_energetica','parcheggio','vicinanza_mare','tipo_proprieta','prezzo_ricercato','richiesta_specifica',
+        'privacy_accepted' # Aggiungi la privacy
+    ]}
+
+    # 2. VALIDAZIONE (Riutilizza la funzione che hai)
+    error_message = validate_client_data(data)
+    
+    # 3. CONTROLLO PRIVACY
+    if not data.get('privacy_accepted'):
+        error_message = "Devi accettare l'Informativa sulla Privacy per procedere."
+
+    if error_message:
+        flash(f"❌ Errore di compilazione: {error_message}")
+        # MODIFICA: In caso di errore, torna alla pagina del form
+        return redirect(url_for('iscrizione_cliente')) 
+
+    # 4. INSERIMENTO NEL DATABASE (con verifica)
+    try:
+        db = get_db()
+        # Nota: Devi assicurarti che la colonna 'privacy_accepted' esista nel tuo DB
+        # Se non esiste, rimuovila da 'data' e dalla lista delle colonne qui sotto
+        
+        # Rimuoviamo il campo privacy per l'inserimento nel DB se non ne hai la colonna
+        data.pop('privacy_accepted') 
+        
+        colonne = list(data.keys())
+        placeholder = ', '.join(['?'] * len(colonne))
+        
+        db.execute(f'''
+            INSERT INTO clienti ({', '.join(colonne)}) 
+            VALUES ({placeholder})
+        ''', tuple(data.values()))
+        
+        db.commit()
+        flash("✅ Iscrizione completata con successo! Verrai ricontattato a breve.")
+            
+    except sqlite3.Error as e:
+        flash(f"❌ Errore Database: Impossibile completare l'iscrizione. Dettagli: {e}", 'error')
+        
+    except Exception as e:
+        flash(f"❌ Errore imprevisto durante l'iscrizione: {e}", 'error')
+
+    # 5. REINDIRIZZAMENTO FINALE
+    # MODIFICA: In caso di successo o fallimento DB, reindirizza sempre alla pagina del form
+    return redirect(url_for('iscrizione_cliente'))
+
+
 
 @app.route('/clienti', methods=['GET', 'POST'])
 def lista_clienti():
