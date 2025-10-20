@@ -5,356 +5,254 @@
     <title>Iscrizione Cliente</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
     <style>
-    /* File: static/style.css */
+    /* Stili incorporati per un controllo rapido del layout */
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f4f7f6;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+    }
 
-/* --- GENERAL RESET & LAYOUT --- */
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7f6;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-    line-height: 1.6;
-}
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-h1, h2 {
-    color: #2c3e50;
-    border-bottom: 2px solid #3498db;
-    padding-bottom: 5px;
-    margin-top: 20px;
-}
+    h1 {
+        color: #c62828; /* Rosso Remax */
+        border-bottom: 2px solid #ef5350;
+        padding-bottom: 5px;
+        margin-top: 0;
+        text-align: center;
+    }
 
-a {
-    color: #3498db;
-    text-decoration: none;
-}
+    fieldset {
+        border: 1px solid #ddd;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
 
-a:hover {
-    text-decoration: underline;
-}
+    legend {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #004d99;
+        padding: 0 10px;
+    }
 
-/* --- FLASH MESSAGES (AVVISI) --- */
-.flashes {
-    list-style: none;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    font-weight: bold;
-}
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
 
-.flashes li {
-    padding: 5px;
-}
-
-.flashes li:first-child {
-    margin-top: 0;
-}
-
-/* Successo (verde) */
-.flashes li:contains("successo") {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-/* Errore/Allarme (rosso/arancione) */
-.flashes li:not(:contains("successo")) {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
+    input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"], select, textarea {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    
+    .half-width {
+        display: inline-block;
+        width: 49%;
+        margin-right: 1%;
+    }
+    .half-width label, .half-width input, .half-width select {
+        width: 100%;
+    }
 
 
-/* --- FORMS (AGGIUNTA/MODIFICA/ISCRIZIONE) --- */
-form {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    max-width: 700px;
-    margin: 20px 0;
-}
+    .form-group.privacy-toggle {
+        display: flex;
+        align-items: center;
+    }
+    .form-group.privacy-toggle input[type="checkbox"] {
+        width: auto;
+        margin-right: 10px;
+    }
+    .form-group.privacy-toggle label {
+        display: inline;
+        font-weight: normal;
+    }
 
-fieldset {
-    border: 1px solid #ccc;
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-}
+    button[type="submit"] {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background-color: #ef5350;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.1em;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+    }
 
-legend {
-    font-weight: bold;
-    color: #34495e;
-    padding: 0 10px;
-}
-
-label {
-    display: block;
-    margin-top: 15px;
-    font-weight: 600;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="number"],
-input[type="date"],
-select,
-textarea {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Importante per width: 100% */
-}
-
-textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-button[type="submit"] {
-    background-color: #2ecc71;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    margin-top: 20px;
-    transition: background-color 0.3s ease;
-}
-
-button[type="submit"]:hover {
-    background-color: #27ae60;
-}
-
-/* --- TABELLE (LISTA CLIENTI) --- */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-th, td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
-
-th {
-    background-color: #3498db;
-    color: white;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 14px;
-}
-
-tr:hover {
-    background-color: #f5f5f5;
-}
-
-/* Stile per riga compleanno (usato in clienti.html) */
-.compleanno-oggi {
-    background-color: #d4edda !important; /* Verde chiaro */
-    color: #155724;
-    font-weight: bold;
-}
-
-/* Stile per la lista dei festeggiati */
-.birthday-alert {
-    margin: 20px 0;
-    padding: 15px;
-    background-color: #ecf0f1;
-    border-left: 5px solid #3498db;
-    border-radius: 4px;
-}
-.birthday-alert ul {
-    list-style-type: none;
-    padding: 0;
-}
-.birthday-alert li {
-    margin-top: 5px;
-}
-
-.flashes {
-    list-style: none;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    font-weight: bold;
-    border: 1px solid transparent;
-}
-
-/* Stile per i messaggi di SUCCESS (verde) */
-.flashes li.success {
-    background-color: #d4edda; 
-    color: #155724;
-    border-color: #c3e6cb;
-}
-
-/* Stile per i messaggi di ERRORE (rosso) */
-.flashes li.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border-color: #f5c6cb;
-}
-</style>
-    </head>
+    button[type="submit"]:hover {
+        background-color: #d32f2f;
+    }
+    </style>
+</head>
 <body>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
-    <h1>Modulo di Iscrizione Cliente</h1>
-    
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul class="flashes" style="color: red; list-style: none;">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
+    <div class="container">
+        <h1>Iscrizione Nuovo Cliente</h1>
 
-    <form method="POST" action="{{ url_for('aggiungi_cliente') }}">
-        
-        <fieldset>
-            <legend>Dati Personali</legend>
-            <label for="nome_cliente">Nome:</label>
-            <input type="text" id="nome_cliente" name="nome_cliente" required><br><br>
+        <form method="POST" action="{{ url_for('iscrizione_cliente') }}">
 
-            <label for="cognome_cliente">Cognome:</label>
-            <input type="text" id="cognome_cliente" name="cognome_cliente" required><br><br>
+            <fieldset>
+                <legend>Dati Cliente Principale</legend>
 
-            <label for="email_cliente">Email:</label>
-            <input type="email" id="email_cliente" name="email_cliente" required><br><br>
+                <label for="nome">Nome:</label>
+                <input type="text" name="nome" maxlength="15" required>
 
-            <label for="telefono_cliente">Telefono:</label>
-            <input type="text" id="telefono_cliente" name="telefono_cliente" required><br><br>
-            
-            <label for="sesso_cliente">Sesso:</label>
-            <select id="sesso_cliente" name="sesso_cliente" required>
-                <option value="">Seleziona</option>
-                <option value="M">Maschio</option>
-                <option value="F">Femmina</option>
-            </select><br><br>
+                <label for="cognome">Cognome:</label>
+                <input type="text" name="cognome" maxlength="15" required>
 
-            <label for="data_nascita">Data di Nascita:</label>
-            <input type="date" id="data_nascita" name="data_nascita" required><br><br>
-            
-        </fieldset>
-        
-        <fieldset>
-            <legend>Dati Beneficiario</legend>
-            <input type="checkbox" id="beneficiario_diverso">
-            <label for="beneficiario_diverso">Il beneficiario è diverso dal cliente?</label>
-            
-            <div id="dati-beneficiario" style="display: none; padding-left: 20px;"> 
-                <p>Inserisci i dati del beneficiario (opzionali se lasciati vuoti):</p>
-                <label for="nome_beneficiario">Nome Beneficiario:</label>
-                <input type="text" name="nome_beneficiario" id="nome_beneficiario"><br><br>
+                <label for="sesso">Sesso:</label>
+                <select name="sesso" required>
+                    <option value="">Seleziona</option>
+                    <option value="M">Maschio</option>
+                    <option value="F">Femmina</option>
+                </select>
+
+                <label for="data_nascita">Data di Nascita:</label>
+                <input type="date" name="data_nascita" required>
+
+                <label for="telefono">Telefono:</label>
+                <input type="tel" name="telefono" maxlength="15" required>
+
+                <label for="email">Email:</label>
+                <input type="email" name="email" maxlength="50" required>
+            </fieldset>
+
+            <fieldset style="margin-bottom: 5px;">
+                <legend>Dati Beneficiario (Se Diverso)</legend>
+                <div class="form-group privacy-toggle" style="text-align: left; margin-bottom: 15px;">
+                    <input type="checkbox" id="beneficiario_diverso" name="beneficiario_diverso">
+                    <label for="beneficiario_diverso" style="font-weight: normal;">Il beneficiario è diverso dal cliente?</label>
+                </div>
                 
-                <label for="cognome_beneficiario">Cognome Beneficiario:</label>
-                <input type="text" name="cognome_beneficiario" id="cognome_beneficiario"><br><br>
-                
-                <label for="email_beneficiario">Email Beneficiario:</label>
-                <input type="email" name="email_beneficiario" id="email_beneficiario"><br><br>
+                <div id="dati-beneficiario" style="display: none;">
+                    <label for="nome_beneficiario">Nome Beneficiario:</label>
+                    <input type="text" name="nome_beneficiario" maxlength="15">
 
-                <input type="hidden" name="sesso_beneficiario" value=""> 
-                <input type="hidden" name="telefono_beneficiario" value="">
-                <input type="hidden" name="data_nascita_beneficiario" value=""> 
+                    <label for="cognome_beneficiario">Cognome Beneficiario:</label>
+                    <input type="text" name="cognome_beneficiario" maxlength="15">
+                    
+                    <label for="sesso_beneficiario">Sesso Beneficiario:</label>
+                    <select name="sesso_beneficiario">
+                        <option value="">Seleziona</option>
+                        <option value="M">Maschio</option>
+                        <option value="F">Femmina</option>
+                    </select>
+
+                    <label for="data_nascita_beneficiario">Data di Nascita Beneficiario:</label>
+                    <input type="date" name="data_nascita_beneficiario">
+                    
+                    <label for="telefono_beneficiario">Telefono Beneficiario:</label>
+                    <input type="tel" name="telefono_beneficiario" maxlength="15">
+
+                    <label for="email_beneficiario">Email Beneficiario:</label>
+                    <input type="email" name="email_beneficiario" maxlength="50">
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Dettagli Immobile Ricercato</legend>
+
+                <label for="tipologia_immobile">Tipologia Immobile:</label>
+                <select name="tipologia_immobile" required>
+                    <option value="">Seleziona</option>
+                    <option value="BILOCALE">Bilocale</option>
+                    <option value="TRILOCALE">Trilocale</option>
+                    <option value="QUADRILOCALE">Quadrilocale</option>
+                    <option value="VILLA">Villa/Villetta</option>
+                    <option value="LOCALE_COMMERCIALE">Locale Commerciale</option>
+                </select>
+
+                <label for="ristrutturato">Ristrutturato:</label>
+                <select name="ristrutturato" required>
+                    <option value="">Seleziona</option>
+                    <option value="Sì">Sì</option>
+                    <option value="NO">NO</option>
+                </select>
+
+                <label for="piano">Piano:</label>
+                <select name="piano" required>
+                    <option value="">Seleziona</option>
+                    <option value="TERRA">Terra</option>
+                    <option value="INTERMEDIO">Intermedio</option>
+                    <option value="ATTICO">Attico</option>
+                </select>
+
+                <label for="metri_quadri">Metri Quadri (min.):</label>
+                <input type="number" name="metri_quadri" min="30" max="500" required>
+
+                <label for="classe_energetica">Classe Energetica (min.):</label>
+                <select name="classe_energetica" required>
+                    <option value="">Seleziona</option>
+                    {% for c in ['A','B','C','D','E','F','G'] %}
+                        <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="parcheggio">Parcheggio:</label>
+                <select name="parcheggio" required>
+                    <option value="">Seleziona</option>
+                    {% for p in ['BOX','POSTO','PRIVATO','NESSUNO'] %}
+                        <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="vicinanza_mare">Vicinanza Mare:</label>
+                <select name="vicinanza_mare" required>
+                    <option value="">Seleziona</option>
+                    <option value="Sì">Sì</option>
+                    <option value="NO">NO</option>
+                </select>
+
+                <label for="tipo_proprieta">Tipo Proprietà:</label>
+                <select name="tipo_proprieta" required>
+                    <option value="">Seleziona</option>
+                    {% for tipo in ['NUDA','PIENA','USUFRUTTO','ALTRO'] %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="prezzo_ricercato">Prezzo Ricercato (Max):</label>
+                <input type="number" name="prezzo_ricercato" min="20000" max="600000" required>
+                
+                <label for="richiesta_specifica">Richiesta Specifica:</label>
+                <textarea name="richiesta_specifica" maxlength="300" placeholder="Note aggiuntive sulla richiesta (es. 'solo ultimo piano', 'vista mare', ecc.)"></textarea>
+
+            </fieldset>
+
+            <div class="form-group privacy-toggle" style="margin-top: 20px; text-align: left;">
+                <input type="checkbox" id="privacy_accepted" name="privacy_accepted" required>
+                <label for="privacy_accepted">
+                    Accetto l'<a href="{{ url_for('privacy_policy') }}" target="_blank">Informativa sulla Privacy</a> (obbligatorio)
+                </label>
             </div>
-        </fieldset>
 
-        <fieldset>
-            <legend>Richiesta Immobile</legend>
-            
-            
-            <h3>Dati Immobile</h3>
- 
-    <select name="tipologia_immobile" required>
-        <option value="">Tipologia immobile</option>
-        <option>Monolocale</option>
-        <option>Bilocale</option>
-        <option>Trilocale</option>
-        <option>Quadrilocale</option>
-        <option>Villa singola</option>
-        <option>Villa bifamiliare</option>
-        <option>Altro</option>
-    </select>
+            <button type="submit">Invia Iscrizione</button>
+        </form>
 
+        <p style="margin-top: 20px; text-align: center;">
+            <a href="{{ url_for('index') }}">← Torna alla Home Pubblica</a>
+        </p>
 
-    
-        <select name="ristrutturato" required>
-            <option value="">Ristrutturato</option>
-            <option value="SI">SÌ</option>
-            <option value="NO">NO</option>
-            <option value="ENTRAMBI">ENTRAMBI</option>
-        </select>
-
-
-    <select name="piano" required>
-        <option value="">Piano</option>
-        {% for p in range(0, 6) %}
-            <option>{{ p }}</option>
-        {% endfor %}
-    </select>
-
-    <input type="number" name="metri_quadri" placeholder="Metri quadri" min="20" max="400" required>
-    
-    <select name="classe_energetica">
-        <option value="">Classe energetica</option>
-        {% for c in ['A', 'B', 'C', 'D', 'E', 'F', 'G'] %}
-            <option>{{ c }}</option>
-        {% endfor %}
-    </select>
-
-    <select name="parcheggio" required>
-        <option value="">Parcheggio</option>
-        <option>BOX</option>
-        <option>POSTO</option>
-        <option>PRIVATO</option>
-        <option>NESSUNO</option>
-    </select>
-
-    <select name="vicinanza_mare" required>
-        <option value="">Vicinanza mare</option>
-        <option>Sì</option>
-        <option>NO</option>
-    </select>
-
-    <select name="tipo_proprieta" required>
-        <option value="">Tipo proprietà</option>
-        <option>NUDA</option>
-        <option>PIENA</option>
-        <option>USUFRUTTO</option>
-        <option>ALTRO</option>
-    </select>
-
-    <input type="number" name="prezzo_ricercato" placeholder="Prezzo ricercato" min="20000" max="600000" required>
-    <input type="text" name="richiesta_specifica" maxlength="300" placeholder="Richiesta specifica">
-
-        </fieldset>
-
-    <div class="form-group privacy-toggle" style="margin-top: 20px; text-align: left;">
-    <input type="checkbox" id="privacy_accepted" name="privacy_accepted" required>
-    <label for="privacy_accepted">
-        Accetto l'<a href="{{ url_for('privacy_policy') }}" target="_blank">Informativa sulla Privacy</a> (obbligatorio)
-    </label>
-</div>
-
-        <button type="submit">Invia Iscrizione</button>
-    </form>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -367,13 +265,15 @@ tr:hover {
                 } else {
                     datiBeneficiario.style.display = 'none';
                     // Pulisci i campi quando sono nascosti
-                    datiBeneficiario.querySelectorAll('input, select').forEach(input => {
+                    datiBeneficiario.querySelectorAll('input, select, textarea').forEach(input => {
                         input.value = '';
                     });
                 }
             }
             checkbox.addEventListener('change', toggleBeneficiario);
-            toggleBeneficiario(); 
+
+            // Esegui al caricamento
+            toggleBeneficiario();
         });
     </script>
 </body>

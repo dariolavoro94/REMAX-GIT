@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benvenuto - Gestionale Immobiliare</title>
+    <title>Massimizza il Tuo Immobile - Analisi di Mercato in Tempo Reale</title>
     <style>
         /* --- 1. VARIABILI E BASE --- */
         :root {
-            --primary-color: #EF5350; /* Rosso Caratteristico */
+            --primary-color: #004d99; /* Blu Profondo, Autorità e Fiducia */
             --secondary-color: #333333;
-            --background-color: #f8f8f8;
-            --success-color: #4CAF50; /* Verde per i dati positivi */
+            --background-color: #f4f7f6;
+            --highlight-color: #28a745; /* Verde per enfasi sui numeri (Positivo) */
+            --danger-color: #dc3545; /* Rosso per l'Urgenza / Prezzi (Azione) */
         }
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--background-color);
             color: var(--secondary-color);
             margin: 0;
@@ -21,7 +22,7 @@
             line-height: 1.6;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             text-align: center;
@@ -29,246 +30,142 @@
         
         /* --- 2. HERO SECTION --- */
         .hero {
-            padding: 60px 20px;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ url_for('static', filename='img/home-background.jpg') }}') no-repeat center center/cover;
+            padding: 80px 20px;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{{ url_for('static', filename='img/background_immo.jpg') }}') no-repeat center center;
+            background-size: cover;
             color: white;
-            margin-bottom: 30px;
-            height: 80vh;
-            position: relative;
-            background-attachment: fixed;
         }
-
-        .hero .container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 800px;
-        }
-        .hero h2 {
-            font-size: 3em;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-        }
-        .hero p {
-            font-size: 1.3em;
-            margin-bottom: 30px;
-        }
-
-        /* Pulsante Principale */
-        .btn-primary {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 1.5em;
-            font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-        .btn-primary:hover {
-            background-color: #d32f2f;
-            transform: translateY(-2px);
-        }
-
-        /* --- 3. SEZIONE CARD STATICHE (TUTTE) --- */
-
-        #market-stats-correlated {
-            background-color: #f8f9fa;
-            padding: 3rem 20px;
-        }
-
-        /* Layout Grid per le Card */
-        .card-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        /* Stile base Card */
-        .card {
-            background-color: white;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-        
-        .card-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .card-icon {
-            font-size: 3em;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .card-title {
-            font-weight: 700;
-            font-size: 1.8rem;
-            color: var(--success-color);
-            margin-top: 5px;
+        .hero h1 {
+            font-size: 2.5rem;
             margin-bottom: 10px;
         }
-
-        .card-text {
-            font-size: 0.95rem;
-            color: #6c757d;
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 20px auto;
+        }
+        
+        /* --- 3. STATS SECTION --- */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 40px 20px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 40px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-item .number {
+            font-size: 3rem;
+            color: var(--highlight-color);
+            font-weight: bold;
+            display: block;
+        }
+        .stat-item small {
+            color: #777;
         }
 
-        .card-footer {
-            padding: 15px 10px;
-            border-top: 1px solid #eee;
-            margin-top: auto;
-        }
-
-
-        /* --- 4. SEZIONE VANTAGGI --- */
+        /* --- 4. ADVANTAGES SECTION --- */
         .advantages {
-            text-align: left;
-            padding: 30px 0;
+            padding: 40px 20px;
         }
         .advantages h2 {
             color: var(--primary-color);
-            text-align: center;
             margin-bottom: 30px;
         }
         .advantage-item {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            text-align: left;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border-left: 5px solid var(--primary-color);
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .advantage-item span {
-            font-size: 1.8em;
+            font-size: 2rem;
+            margin-right: 20px;
+        }
+        .advantage-item p strong {
             color: var(--primary-color);
-            margin-right: 15px;
         }
 
-        /* --- 5. MEDIA QUERIES --- */
-        @media (max-width: 992px) {
-            .card-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        /* --- 5. BOTTONI --- */
+        .btn-action {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color: var(--danger-color); /* Usiamo il rosso per l'azione (Call to Action) */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color 0.3s ease;
+        }
+        .btn-action:hover {
+            background-color: #b02736;
         }
 
-        @media (max-width: 576px) {
-            .hero h2 {
-                font-size: 2em;
-            }
-            .card-row {
-                grid-template-columns: 1fr;
-            }
-            .btn-primary {
-                font-size: 1.2em;
-                padding: 12px 25px;
-            }
-        }
     </style>
 </head>
 <body>
-
-    <section class="hero">
-        <div class="container">
-            <h2>Non Sognare. Compra o Vendi. Subito.</h2>
-            <p>Il mercato immobiliare è in fermento. Scegliere il momento e l'agenzia giusta fa la differenza tra un affare e un'opportunità mancata.</p>
-            
-            <a href="{{ url_for('iscrizione_cliente') }}" class="btn-primary">
-                INIZIA ORA: ISCRIVITI GRATUITAMENTE
-            </a>
-            
-        </div>
-    </section>
-
     <div class="container">
         
-        <section id="market-stats-correlated">
-            <h2 class="text-center mb-5" style="color: var(--secondary-color);">I Numeri Chiave del Mercato Immobiliare Italiano</h2>
+        <header style="text-align: right; margin-bottom: 20px;">
+            <a href="{{ url_for('login') }}" style="color: var(--primary-color); text-decoration: none; font-weight: bold;">ACCESSO AGENTI</a>
+        </header>
+
+        <section class="hero">
+            <h1>Massimizza il Valore del Tuo Immobile</h1>
+            <p>Ottieni una valutazione di mercato in tempo reale e connettiti con la nostra rete esclusiva di acquirenti pre-qualificati. Smettila di perdere tempo, inizia a guadagnare.</p>
             
-            <div class="card-row">
-                
-                <div class="card">
-                    <div class="card-body">
-                        <span class="card-icon" role="img" aria-label="Casa">🏠</span>
-                        <h3 class="card-title">2.254 €/m²</h3>
-                        <p class="card-text">
-                            Prezzo medio di vendita al metro quadro per il residenziale in Italia.
-                        </p>
-                    </div>
-                    <div class="card-footer">
-                         <small class="text-secondary">(Dato medio nazionale - Vendita)</small>
-                    </div>
-                </div>
+            <a href="{{ url_for('iscrizione_cliente') }}" class="btn-action" style="margin-top: 30px;">
+                INIZIA ORA: ISCRIVITI GRATUITAMENTE
+            </a>
+        </section>
 
-                <div class="card"> 
-                    <div class="card-body">
-                         <span class="card-icon" role="img" aria-label="Banca">🏦</span>
-                        <h3 class="card-title">4.50%</h3>
-                        <p class="card-text">
-                            Tasso d'interesse ufficiale (Refi Rate) della Banca Centrale Europea.
-                        </p>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-secondary">(Indicatore chiave per il costo del credito)</small>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <span class="card-icon" role="img" aria-label="Grafico a Barre">📈</span>
-                        <h3 class="card-title">+5,99%</h3>
-                        <p class="card-text">
-                            Aumento medio su base annua dei canoni di affitto residenziale in Italia.
-                        </p>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-secondary">(Segnale di forte domanda locativa)</small>
-                    </div>
-                </div>
-                
+        <section class="stats">
+            <div class="stat-item">
+                <span class="number">+15%</span>
+                <small>Valore medio di vendita extra sui listini tradizionali.</small>
+            </div>
+            <div class="stat-item">
+                <span class="number">28</span>
+                <small>Giorni in media per concludere una transazione.</small>
+            </div>
+            <div class="stat-item">
+                <span class="number">98%</span>
+                <small>Soddisfazione del cliente sul processo end-to-end.</small>
             </div>
         </section>
         
         <section class="advantages">
-            <h2>Perché Scegliere la Giusta Agenzia?</h2>
-            <p>Un errore di valutazione o una promozione inefficace possono costarti decine di migliaia di Euro e mesi di attesa. Noi garantiamo:</p>
+            <h2>Il Vantaggio di Scegliere un Partner Strategico</h2>
+            <p>Sfruttare il mercato richiede precisione, dati e una rete solida. Ti supportiamo in ogni fase:</p>
             
             <div class="advantage-item">
-                <span>🔍</span>
-                <p><strong>Valutazione Precisa:</strong> Algoritmi avanzati per un prezzo di mercato reale e massimizzato.</p>
+                <span>📊</span>
+                <p><strong>Valutazione 100% Data-Driven:</strong> Utilizziamo un algoritmo che incrocia i dati di mercato in tempo reale per garantirti il **prezzo massimo raggiungibile**.</p>
             </div>
             
             <div class="advantage-item">
-                <span>💰</span>
-                <p><strong>Massima Visibilità:</strong> Il tuo immobile super visibile grazie a campagne marketing studiate per il tuo immobile</p>
+                <span>🚀</span>
+                <p><strong>Raggiungimento Esclusivo:</strong> Promuoviamo la tua proprietà solo a clienti la cui capacità di acquisto è stata preventivamente verificata.</p>
             </div>
             
             <div class="advantage-item">
-                <span>👩‍💻</span>
-                <p><strong>Consulenza Legale e Fiscale:</strong> Ti guidiamo in ogni fase, zero stress burocratico.</p>
+                <span>🛡️</span>
+                <p><strong>Zero Burocrazia e Stress:</strong> Ti guidiamo attraverso ogni passaggio legale, fiscale e notarile, garantendo una transazione rapida e sicura.</p>
             </div>
             
             <div style="text-align: center; margin-top: 50px;">
-                <a href="{{ url_for('iscrizione_cliente') }}" class="btn-primary">
-                    ENTRA SUBITO NELL'ELENCO CLIENTI
+                <a href="{{ url_for('iscrizione_cliente') }}" class="btn-action">
+                    INIZIA ORA: VALUTA LA TUA PROPRIETÀ
                 </a>
             </div>
 

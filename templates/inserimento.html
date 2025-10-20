@@ -14,6 +14,9 @@
         h1 {
             color: #c62828;
         }
+        .navigation-buttons {
+            margin-bottom: 30px;
+        }
         .button {
             display: inline-block;
             padding: 12px 24px;
@@ -29,9 +32,38 @@
         }
         form {
             margin-top: 2rem;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            text-align: left;
         }
-        input[type="file"] {
-            margin: 10px 0;
+        fieldset {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        legend {
+            font-weight: bold;
+            color: #004d99;
+            padding: 0 10px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
         button {
             padding: 8px 16px;
@@ -44,23 +76,45 @@
         button:hover {
             background-color: #d32f2f;
         }
+
+        /* Nuovo stile per il bottone di logout per differenziarlo */
+        .logout-button {
+            background-color: #7f8c8d; /* Grigio per il logout */
+        }
+        .logout-button:hover {
+            background-color: #95a5a6;
+        }
     </style>
 </head>
 <body>
     <h1>Benvenuto nel Gestionale REMAX</h1>
 
-    <div>
+    <div class="navigation-buttons">
         <a class="button" href="{{ url_for('lista_clienti') }}">📋 Visualizza Clienti</a>
+        <a class="button logout-button" href="{{ url_for('logout') }}">🚪 Logout</a>
     </div>
 
-    <div>
-        <h3>Carica un file SVG</h3>
-        <form method="POST" action="{{ url_for('upload_svg') }}" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".svg" required>
-            <br>
-            <button type="submit">Carica SVG</button>
-        </form>
-    </div>
+    <form method="POST" action="{{ url_for('iscrivi_nuovo_cliente') }}">
+        <fieldset>
+            <legend>Dati Personali (Nuovo Inserimento)</legend>
+            <label for="nome_cliente">Nome:</label>
+            <input type="text" id="nome_cliente" name="nome" required><br>
 
-</body>
+            <label for="cognome_cliente">Cognome:</label>
+            <input type="text" id="cognome_cliente" name="cognome" required><br>
+
+            <label for="telefono_cliente">Telefono:</label>
+            <input type="text" id="telefono_cliente" name="telefono" required><br>
+
+            <label for="data_nascita">Data di Nascita:</label>
+            <input type="date" id="data_nascita" name="data_nascita" required><br>
+        
+            <p style="color: #ef5350; margin-top: 20px;">
+                NOTA: Mancano i campi per i dettagli immobiliari per completare l'inserimento.
+            </p>
+        </fieldset>
+        <button type="submit">Invia Iscrizione</button>
+    </form>
+    
+    </body>
 </html>

@@ -4,117 +4,208 @@
     <meta charset="UTF-8">
     <title>Modifica Cliente</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
+    <style>
+        /* Stili per messaggi flash */
+        .alert { padding: 10px; margin-bottom: 10px; border-radius: 5px; font-weight: bold; }
+        .alert.danger { background-color: #f8d7da; color: #dc3545; }
+        .alert.success { background-color: #d4edda; color: #28a745; }
+        .alert.warning { background-color: #fff3cd; color: #ffc107; }
+        
+        /* Stili del form */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            margin: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #c62828;
+            border-bottom: 2px solid #ef5350;
+            padding-bottom: 5px;
+            margin-top: 0;
+            text-align: center;
+        }
+
+        form {
+            text-align: left;
+        }
+
+        fieldset {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        legend {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #004d99;
+            padding: 0 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"], select, textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button[type="submit"] {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745; /* Verde per confermare la modifica */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #1e7e34;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #004d99;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .back-link:hover {
+            background-color: #003366;
+        }
+    </style>
 </head>
 <body>
-    <h1>Modifica Cliente</h1>
+    <div class="container">
+        <a href="{{ url_for('lista_clienti') }}" class="back-link">← Torna all'Elenco Clienti</a>
 
-    <form action="{{ url_for('modifica_cliente', id=cliente['id']) }}" method="POST">
-        <label>Nome:</label>
-        <input type="text" name="nome_cliente" value="{{ cliente['nome'] }}" maxlength="15" pattern="[A-Za-z]+" required><br>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+        <h1>Modifica Cliente: {{ cliente['nome'] }} {{ cliente['cognome'] }}</h1>
 
-        <label>Cognome:</label>
-        <input type="text" name="cognome_cliente" value="{{ cliente['cognome'] }}" maxlength="15" pattern="[A-Za-z]+" required><br>
+        <form action="{{ url_for('modifica_cliente', id=cliente['id']) }}" method="POST">
+            <fieldset>
+                <legend>Dati Cliente Principale</legend>
 
-        <label>Sesso:</label>
-        <select name="sesso_cliente" required>
-            <option value="M" {% if cliente['sesso'] == 'M' %}selected{% endif %}>M</option>
-            <option value="F" {% if cliente['sesso'] == 'F' %}selected{% endif %}>F</option>
-        </select><br>
+                <label>Nome:</label>
+                <input type="text" name="nome" value="{{ cliente['nome'] }}" maxlength="15" pattern="[A-Za-zÀ-ÿ\s]{1,15}" title="Solo lettere, max 15 caratteri" required>
 
-        <label>Data di nascita:</label>
-        <input type="date" name="data_nascita" value="{{ cliente['data_nascita'] }}"><br>
+                <label>Cognome:</label>
+                <input type="text" name="cognome" value="{{ cliente['cognome'] }}" maxlength="15" pattern="[A-Za-zÀ-ÿ\s]{1,15}" title="Solo lettere, max 15 caratteri" required>
 
-        <label>Telefono:</label>
-        <input type="text" name="telefono_cliente" value="{{ cliente['telefono'] }}" maxlength="10" pattern="[0-9]{1,10}"><br>
+                <label>Sesso:</label>
+                <select name="sesso" required>
+                    <option value="M" {% if cliente['sesso'] == 'M' %}selected{% endif %}>Maschio</option>
+                    <option value="F" {% if cliente['sesso'] == 'F' %}selected{% endif %}>Femmina</option>
+                </select>
 
-        <label>Email:</label>
-        <input type="email" name="email_cliente" value="{{ cliente['email'] }}"><br>
+                <label>Data di Nascita:</label>
+                <input type="date" name="data_nascita" value="{{ cliente['data_nascita'] }}" required>
 
-        <label>Nome Beneficiario:</label>
-        <input type="text" name="nome_beneficiario" value="{{ cliente['nome_beneficiario'] }}" maxlength="15" pattern="[A-Za-z]+"><br>
+                <label>Telefono:</label>
+                <input type="tel" name="telefono" value="{{ cliente['telefono'] }}" maxlength="15" required>
 
-        <label>Cognome Beneficiario:</label>
-        <input type="text" name="cognome_beneficiario" value="{{ cliente['cognome_beneficiario'] }}" maxlength="15" pattern="[A-Za-z]+"><br>
+                <label>Email:</label>
+                <input type="email" name="email" value="{{ cliente['email'] }}" maxlength="50" required>
+            </fieldset>
 
-        <label>Sesso Beneficiario:</label>
-        <select name="sesso_beneficiario">
-            <option value="M" {% if cliente['sesso_beneficiario'] == 'M' %}selected{% endif %}>M</option>
-            <option value="F" {% if cliente['sesso_beneficiario'] == 'F' %}selected{% endif %}>F</option>
-        </select><br>
+            <fieldset>
+                <legend>Dettagli Immobile Ricercato</legend>
 
-        <label>Data Nascita Beneficiario:</label>
-        <input type="date" name="data_nascita_beneficiario" value="{{ cliente['data_nascita_beneficiario'] }}"><br>
+                <label>Tipologia Immobile:</label>
+                <select name="tipologia_immobile" required>
+                    {% for tipo in ['BILOCALE','TRILOCALE','QUADRILOCALE','VILLA','LOCALE_COMMERCIALE'] %}
+                        <option value="{{ tipo }}" {% if cliente['tipologia_immobile'] == tipo %}selected{% endif %}>{{ tipo }}</option>
+                    {% endfor %}
+                </select>
 
-        <label>Telefono Beneficiario:</label>
-        <input type="text" name="telefono_beneficiario" value="{{ cliente['telefono_beneficiario'] }}" maxlength="10" pattern="[0-9]{1,10}"><br>
+                <label>Ristrutturato:</label>
+                <select name="ristrutturato" required>
+                    <option value="Sì" {% if cliente['ristrutturato'] == 'Sì' %}selected{% endif %}>Sì</option>
+                    <option value="NO" {% if cliente['ristrutturato'] == 'NO' %}selected{% endif %}>NO</option>
+                </select>
 
-        <label>Email Beneficiario:</label>
-        <input type="email" name="email_beneficiario" value="{{ cliente['email_beneficiario'] }}"><br>
+                <label>Piano:</label>
+                <select name="piano" required>
+                    {% for p in ['TERRA','INTERMEDIO','ATTICO'] %}
+                        <option value="{{ p }}" {% if cliente['piano'] == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
 
-        <label>Tipologia Immobile:</label>
-        <select name="tipologia_immobile" required>
-            {% for tipo in ['Monolocale','Bilocale','Trilocale','Quadrilocale','Villa singola','Villa bifamiliare','Altro'] %}
-                <option value="{{ tipo }}" {% if cliente['tipologia_immobile'] == tipo %}selected{% endif %}>{{ tipo }}</option>
-            {% endfor %}
-        </select><br>
+                <label>Metri Quadri (min.):</label>
+                <input type="number" name="metri_quadri" min="30" max="500" value="{{ cliente['metri_quadri'] }}" required>
 
+                <label>Classe Energetica (min.):</label>
+                <select name="classe_energetica" required>
+                    {% for c in ['A','B','C','D','E','F','G'] %}
+                        <option value="{{ c }}" {% if cliente['classe_energetica'] == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
 
-        
-        <label>Ristrutturato:</label>
-        <select name="ristrutturato" required>
-            <option value="">Ristrutturato</option>
-            <option value="SI" {% if cliente['ristrutturato'] == 'SI' %}selected{% endif %}>SÌ</option>
-            <option value="NO" {% if cliente['ristrutturato'] == 'NO' %}selected{% endif %}>NO</option>
-            <option value="ENTRAMBI" {% if cliente['ristrutturato'] == 'ENTRAMBI' %}selected{% endif %}>ENTRAMBI</option>
-        </select><br>
+                <label>Parcheggio:</label>
+                <select name="parcheggio" required>
+                    {% for p in ['BOX','POSTO','PRIVATO','NESSUNO'] %}
+                        <option value="{{ p }}" {% if cliente['parcheggio'] == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
 
+                <label>Vicinanza Mare:</label>
+                <select name="vicinanza_mare" required>
+                    <option value="Sì" {% if cliente['vicinanza_mare'] == 'Sì' %}selected{% endif %}>Sì</option>
+                    <option value="NO" {% if cliente['vicinanza_mare'] == 'NO' %}selected{% endif %}>NO</option>
+                </select>
 
+                <label>Tipo Proprietà:</label>
+                <select name="tipo_proprieta" required>
+                    {% for tipo in ['NUDA','PIENA','USUFRUTTO','ALTRO'] %}
+                        <option value="{{ tipo }}" {% if cliente['tipo_proprieta'] == tipo %}selected{% endif %}>{{ tipo }}</option>
+                    {% endfor %}
+                </select>
 
-        <label>Piano:</label>
-        <select name="piano" required>
-            {% for p in range(0, 6) %}
-                <option value="{{ p }}" {% if cliente['piano'] == p|string %}selected{% endif %}>{{ p }}</option>
-            {% endfor %}
-        </select><br>
+                <label>Prezzo Ricercato:</label>
+                <input type="number" name="prezzo_ricercato" min="20000" max="600000" value="{{ cliente['prezzo_ricercato'] }}" required>
 
-        <label>Metri Quadri:</label>
-        <input type="number" name="metri_quadri" min="20" max="400" value="{{ cliente['metri_quadri'] }}" required><br>
+                <label>Richiesta Specifica:</label>
+                <textarea name="richiesta_specifica" maxlength="300" placeholder="Note aggiuntive">{{ cliente['richiesta_specifica'] or '' }}</textarea>
+            </fieldset>
 
-        <label>Classe Energetica:</label>
-        <select name="classe_energetica">
-            {% for c in ['A', 'B', 'C', 'D', 'E', 'F', 'G'] %}
-                <option value="{{ c }}" {% if cliente['classe_energetica'] == c %}selected{% endif %}>{{ c }}</option>
-            {% endfor %}
-        </select><br>
-
-        <label>Parcheggio:</label>
-        <select name="parcheggio" required>
-            {% for p in ['BOX','POSTO','PRIVATO','NESSUNO'] %}
-                <option value="{{ p }}" {% if cliente['parcheggio'] == p %}selected{% endif %}>{{ p }}</option>
-            {% endfor %}
-        </select><br>
-
-        <label>Vicinanza Mare:</label>
-        <select name="vicinanza_mare" required>
-            <option value="Sì" {% if cliente['vicinanza_mare'] == 'Sì' %}selected{% endif %}>Sì</option>
-            <option value="NO" {% if cliente['vicinanza_mare'] == 'NO' %}selected{% endif %}>NO</option>
-        </select><br>
-
-        <label>Tipo Proprietà:</label>
-        <select name="tipo_proprieta" required>
-            {% for tipo in ['NUDA','PIENA','USUFRUTTO','ALTRO'] %}
-                <option value="{{ tipo }}" {% if cliente['tipo_proprieta'] == tipo %}selected{% endif %}>{{ tipo }}</option>
-            {% endfor %}
-        </select><br>
-
-        <label>Prezzo Ricercato:</label>
-        <input type="number" name="prezzo_ricercato" min="20000" max="600000" value="{{ cliente['prezzo_ricercato'] }}" required><br>
-
-        <label>Richiesta Specifica:</label>
-        <input type="text" name="richiesta_specifica" maxlength="300" value="{{ cliente['richiesta_specifica'] }}"><br><br>
-
-        <button type="submit">💾 Salva Modifiche</button>
-        <a href="{{ url_for('lista_clienti') }}">← Annulla</a>
-    </form>
+            <button type="submit">Salva Modifiche</button>
+        </form>
+    </div>
 </body>
 </html>
