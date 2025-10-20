@@ -1,11 +1,4 @@
- os
- sqlite3
- configparser
- re
- gunicorn
- flask  
- io  
- reportlab
- werkzeug.utils  
- reportlab.lib  
- datetime
+gunicorn
+flask  
+io  
+reportlab
