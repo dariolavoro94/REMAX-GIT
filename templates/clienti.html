@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Elenco Clienti - Gestionale REMAX</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fafafa;
+            margin: 2rem;
+        }
+        h1 {
+            color: #c62828;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        label {
+            font-size: 15px;
+        }
+
+        /* Contenitore per lo scroll orizzontale su tabelle grandi */
+        .table-responsive {
+            overflow-x: auto;
+            margin: 1rem auto;
+            width: 95%; /* Leggermente più largo del 90% per lo spazio scroll */
+            max-width: 1400px; /* Limita la larghezza su schermi enormi */
+        }
+        
+        table {
+            width: 100%; /* Occupa tutto lo spazio del contenitore */
+            min-width: 2500px; /* Forziamo una larghezza minima per mostrare tutte le colonne */
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #ef5350;
+            color: white;
+            white-space: nowrap; /* Impedisce che le intestazioni si spezzino */
+        }
+        td {
+            white-space: nowrap;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .form-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        input, button, select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #ef5350;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #d32f2f;
+        }
+        .back-link {
+            display: block;
+            margin: 2rem auto 1rem auto;
+            text-align: center;
+        }
+
+        .compleanno-oggi {
+            background-color: #d4edda !important; /* Verde chiaro */
+            color: #155724;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Elenco Clienti</h1>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Sesso</th>
+                    <th>Data Nascita</th>
+                    <th>Telefono</th>
+                    <th>Email</th>
+                    <th>Nome Beneficiario</th>
+                    <th>Cognome Beneficiario</th>
+                    <th>Sesso Beneficiario</th>
+                    <th>Data Nascita Beneficiario</th>
+                    <th>Telefono Beneficiario</th>
+                    <th>Email Beneficiario</th>
+                    <th>Tipologia Immobile</th>
+                    <th>Ristrutturato</th>
+                    <th>Piano</th>
+                    <th>Metri Quadri</th>
+                    <th>Classe Energetica</th>
+                    <th>Parcheggio</th>
+                    <th>Vicinanza Mare</th>
+                    <th>Tipo Proprietà</th>
+                    <th>Prezzo Ricercato</th>
+                    <th>Richiesta Specifica</th>
+                    <th>Giorni al Compleanno</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if clienti %}
+                {% for cliente in clienti %}
+                <tr class="{% if cliente.compleanno_oggi %}compleanno-oggi{% endif %}">
+                    <td>{{ cliente['id'] }}</td>
+                    <td>{{ cliente['nome'] }}</td>
+                    <td>{{ cliente['cognome'] }}</td>
+                    <td>{{ cliente['sesso'] }}</td>
+                    <td>{{ cliente['data_nascita'] }}</td>
+                    <td>{{ cliente['telefono'] }}</td>
+                    <td>{{ cliente['email'] }}</td> <td>{{ cliente['nome_beneficiario'] }}</td>
+                    <td>{{ cliente['cognome_beneficiario'] }}</td>
+                    <td>{{ cliente['sesso_beneficiario'] }}</td>
+                    <td>{{ cliente['data_nascita_beneficiario'] }}</td>
+                    <td>{{ cliente['telefono_beneficiario'] }}</td>
+                    <td>{{ cliente['email_beneficiario'] }}</td> <td>{{ cliente['tipologia_immobile'] }}</td>
+                    <td>{{ cliente['ristrutturato'] }}</td>
+                    <td>{{ cliente['piano'] }}</td>
+                    <td>{{ cliente['metri_quadri'] }}</td>
+                    <td>{{ cliente['classe_energetica'] }}</td>
+                    <td>{{ cliente['parcheggio'] }}</td>
+                    <td>{{ cliente['vicinanza_mare'] }}</td>
+                    <td>{{ cliente['tipo_proprieta'] }}</td>
+                    <td>{{ cliente['prezzo_ricercato'] }}</td>
+                    <td>{{ cliente['richiesta_specifica'] }}</td>
+                    
+                    <td>
+                        {% if cliente.giorni_mancanti == 0 %}
+                            🎉 OGGI!
+                        {% elif cliente.giorni_mancanti is not none %}
+                            Mancano {{ cliente.giorni_mancanti }} giorni
+                        {% else %}
+                            N/D
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <a href="{{ url_for('modifica_cliente', id=cliente['id']) }}" title="Modifica">✏️</a>
+                        <form action="{{ url_for('elimina_cliente', id=cliente['id']) }}" method="post" style="display:inline;" onsubmit="return confirm('Vuoi davvero eliminare questo cliente?');">
+                            <button type="submit" title="Elimina">🗑️</button>
+                        </form>
+                        <a href="{{ url_for('scheda_cliente', id=cliente['id']) }}" target="_blank" title="Stampa scheda PDF">🖨️</a>
+                    </td>
+                    
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="25" style="text-align:center;">Nessun cliente trovato</td></tr>
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <div class="form-container">
+        <h3>Aggiungi un nuovo cliente</h3>
+        <form action="{{ url_for('aggiungi_cliente') }}" method="POST">
+            <input type="text" name="nome_cliente" maxlength="15" pattern="[A-Za-z]+" placeholder="Nome cliente" required>
+            <input type="text" name="cognome_cliente" maxlength="15" pattern="[A-Za-z]+" placeholder="Cognome cliente" required>
+            
+            <select name="sesso_cliente" required>
+                <option value="">Sesso cliente</option>
+                <option value="M">M</option>
+                <option value="F">F</option>
+            </select>
+            
+            <input type="date" name="data_nascita">
+            <input type="text" name="telefono_cliente" pattern="[0-9]{1,10}" maxlength="10" placeholder="Telefono cliente">
+            <input type="email" name="email_cliente" placeholder="Email cliente">
+
+            <section class="sezione-beneficiario">
+                <h2>Dati Beneficiario</h2>
+                
+                <div class="form-group">
+                    <input type="checkbox" id="beneficiario_diverso">
+                    <label for="beneficiario_diverso"> Il Beneficiario è diverso? </label>
+                </div>
+                
+                <br>
+
+                <div id="dati-beneficiario" style="display: none;"> 
+                    
+                    <div class="form-group">
+                        <input type="text" name="nome_beneficiario" maxlength="15" pattern="[A-Za-z]+" placeholder="Nome beneficiario">
+                    </div>
+                    
+                    <div class="form-group">
+                        <input type="text" name="cognome_beneficiario" maxlength="15" pattern="[A-Za-z]+" placeholder="Cognome beneficiario">
+                    </div>
+
+                    <div class="form-group">
+                        <select name="sesso_beneficiario">
+                        <option value="">Sesso beneficiario</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                    </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input type="date" name="data_nascita_beneficiario">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" name="telefono_beneficiario" pattern="[0-9]{1,10}" maxlength="10" placeholder="Telefono beneficiario">
+                    </div>
+
+                    <div class="form-group">
+                        <input type="email" name="email_beneficiario" placeholder="Email beneficiario">
+                    </div>
+                    
+                </div>
+            </section>
+            
+            <h3>Dati Immobile</h3>
+        
+            <select name="tipologia_immobile" required>
+                <option value="">Tipologia immobile</option>
+                <option>Monolocale</option>
+                <option>Bilocale</option>
+                <option>Trilocale</option>
+                <option>Quadrilocale</option>
+                <option>Villa singola</option>
+                <option>Villa bifamiliare</option>
+                <option>Altro</option>
+            </select>
+            
+            <select name="ristrutturato" required>
+                <option value="">Ristrutturato</option>
+                <option value="SI">SÌ</option>
+                <option value="NO">NO</option>
+                <option value="ENTRAMBI">ENTRAMBI</option>
+            </select>
+
+            <select name="piano" required>
+                <option value="">Piano</option>
+                {% for p in range(0, 6) %}
+                    <option>{{ p }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="number" name="metri_quadri" placeholder="Metri quadri" min="20" max="400" required>
+            
+            <select name="classe_energetica">
+                <option value="">Classe energetica</option>
+                {% for c in ['A', 'B', 'C', 'D', 'E', 'F', 'G'] %}
+                    <option>{{ c }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="parcheggio" required>
+                <option value="">Parcheggio</option>
+                <option>BOX</option>
+                <option>POSTO</option>
+                <option>PRIVATO</option>
+                <option>NESSUNO</option>
+            </select>
+
+            <select name="vicinanza_mare" required>
+                <option value="">Vicinanza mare</option>
+                <option>Sì</option>
+                <option>NO</option>
+            </select>
+
+            <select name="tipo_proprieta" required>
+                <option value="">Tipo proprietà</option>
+                <option>NUDA</option>
+                <option>PIENA</option>
+                <option>USUFRUTTO</option>
+                <option>ALTRO</option>
+            </select>
+
+            <input type="number" name="prezzo_ricercato" placeholder="Prezzo ricercato" min="20000" max="600000" required>
+            <input type="text" name="richiesta_specifica" maxlength="300" placeholder="Richiesta specifica">
+
+            <button type="submit" class="btn btn-danger">Aggiungi</button>
+        </form>
+    </div>
+
+    <div class="birthday-alert">
+        {% if num_compleanni > 0 %}
+            <p style="color: green; font-weight: bold;">🥳 Oggi ci sono {{ num_compleanni }} compleanni!</p>
+            <ul>
+            {% for nome_completo in compleanni_oggi %}
+                <li>{{ nome_completo }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Nessun compleanno oggi.</p>
+        {% endif %}
+    </div>
+
+    <a class="back-link" href="{{ url_for('home') }}">← Torna alla home</a>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('beneficiario_diverso');
+        const datiBeneficiario = document.getElementById('dati-beneficiario');
+        const form = document.querySelector('.form-container form'); // Riferimento al form principale
+
+        function toggleBeneficiario() {
+            if (checkbox.checked) {
+                datiBeneficiario.style.display = 'block';
+                // Quando visibile, rendiamo i campi opzionali se non compilati
+            } else {
+                datiBeneficiario.style.display = 'none';
+                
+                // Opzionale: pulisci i campi quando sono nascosti per non inviare dati parziali
+                datiBeneficiario.querySelectorAll('input, select').forEach(element => {
+                    if (element.type === 'email' || element.type === 'text' || element.type === 'number' || element.type === 'date') {
+                        element.value = '';
+                    } else if (element.tagName === 'SELECT') {
+                        element.selectedIndex = 0; // Seleziona l'opzione vuota
+                    }
+                });
+            }
+        }
+        
+        checkbox.addEventListener('change', toggleBeneficiario);
+
+        // Esegui al caricamento
+        toggleBeneficiario(); 
+    });
+    </script>
+</body>
+</html>
